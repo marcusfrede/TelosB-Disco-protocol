@@ -1,8 +1,8 @@
 clc
 
 % Co-primes
-m_i = 13;
-m_j = 14;
+m_i = 48;
+m_j = 53;
 
 % Milliseconds on timer
 timerdelay = 50;
@@ -22,12 +22,11 @@ if(gcd(m_i,m_j) ~= 1)
 end
 
 cycles = 10000;
-chanceOfHit = (1/m_i)*(1/m_j)
-predictedNumberOfHits = chanceOfHit*cycles
+predictedNumberOfHits = (1/m_i)*(1/m_j)*cycles
 
-numOfCyclesPrHit = 1/chanceOfHit
+numOfCyclesBetweenHits
 
-secBetweenHits = numOfCyclesPrHit*(timerdelay/1000)
+secBetweenHits = (1000/timerdelay)/((1/m_i)*(1/m_j))
 minutesBetweenHits = secBetweenHits/60
 
 for n = 1:cycles
