@@ -50,16 +50,14 @@ implementation {
 
   event void Timer0.fired() {
     counter++;
-    if (!busy) {
-      BlinkToRadioMsg* btrpkt = 
-	(BlinkToRadioMsg*)(call Packet.getPayload(&pkt, sizeof(BlinkToRadioMsg)));
+    if (!busy && counter % COPRIME == 0) {
+      BlinkToRadioMsg* btrpkt = (BlinkToRadioMsg*)(call Packet.getPayload(&pkt, sizeof(BlinkToRadioMsg)));
       if (btrpkt == NULL) {
-		return;
+		    return;
       }
       btrpkt->nodeid = TOS_NODE_ID;
       btrpkt->counter = counter;
-      if (call AMSend.send(AM_BROADCAST_ADDR, 
-          &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {
+      if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {
         busy = TRUE;
       }
     }
