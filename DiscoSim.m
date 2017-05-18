@@ -1,19 +1,19 @@
 clc
 
+% Primes less than 1000
+p = primes(1000);
+
 % Co-primes
-m_i = 13;
-m_j = 14;
+m_i = 37;
+m_j = 43;
+
+% Dutycycles
+DutycycleM_i = (1/m_i)*100
+DutycycleM_j = (1/m_j)*100
+DutycycleCombined = ((1/m_j)*(1/m_i))*100
 
 % Milliseconds on timer
-timerdelay = 50;
-
-% Counters
-c_i = 0;
-c_j = 0;
-
-% Start times
-a_i = 0;
-a_j = 6;
+timerdelay = 1;
 
 % Co-prime check
 if(gcd(m_i,m_j) ~= 1)
@@ -21,25 +21,25 @@ if(gcd(m_i,m_j) ~= 1)
     return
 end
 
-cycles = 10000;
-chanceOfHit = (1/m_i)*(1/m_j)
-predictedNumberOfHits = chanceOfHit*cycles
+chanceOfHit = (1/m_i)*(1/m_j);
 
-numOfCyclesPrHit = 1/chanceOfHit
+numOfCyclesPrHit = 1/chanceOfHit;
+
+array = zeros(1,2000);
+for n = 1:5000
+    chance = 1-(1-(1/numOfCyclesPrHit))^n;
+    cyclesArray(n) = n;
+    chanceArray(n) = chance;
+end
+
+chanceArray
+numOfCyclesPrHit
 
 secBetweenHits = numOfCyclesPrHit*(timerdelay/1000)
 minutesBetweenHits = secBetweenHits/60
 
-for n = 1:cycles
-    if(a_i <= n)
-       c_i = c_i + 1;
-    end
-    
-    if(a_j <= n)
-       c_j = c_j + 1;
-    end
-    
-    if(mod(c_i+a_i,m_i) == 0 && mod(c_j+a_j,m_j) == 0)
-       disp(['Its a match - ' num2str(n)]) 
-    end
-end
+figure
+plot(cyclesArray,chanceArray)
+title('Chance of hit')
+xlabel('Number of cycles')
+ylabel('Chance of minimum 1 hit')
