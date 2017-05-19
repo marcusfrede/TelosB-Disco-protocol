@@ -17,18 +17,17 @@ implementation {
 
 	uint16_t counter;
 	uint16_t ledCounter;
-    const uint16_t identifier = 1;
 	
 	message_t packet;
 	message_t pkt;
 	bool busy = FALSE;
 	
 	void initLeds() {
-		if(identifier == 1) 
+		if(IDENTIFIER == 1) 
 			call Leds.led0On();
 		else 
 			call Leds.led0Off();
-		if(identifier == 2) 
+		if(IDENTIFIER == 2) 
 			call Leds.led1On();
 		else 
 			call Leds.led1Off();
@@ -81,6 +80,8 @@ implementation {
 	
 			if(call AMSend.send(AM_BROADCAST_ADDR, &packet, sizeof(TestSerialMsg)) == SUCCESS) {
 				busy = TRUE;
+				printf("Message send from %u\n", IDENTIFIER);
+				printfflush();
 			}
 		}
 	}
@@ -88,7 +89,7 @@ implementation {
 	event message_t * Receive.receive(message_t * msg, void * payload, uint8_t len) {
 		if(len == sizeof(BlinkToRadioMsg)) {
 			BlinkToRadioMsg * btrpkt = (BlinkToRadioMsg *) payload;
-			printf("Message received from %u\n", btrpkt);
+			printf("Message received from %u\n", counter);
 			printfflush();
 		}
 		return msg;
