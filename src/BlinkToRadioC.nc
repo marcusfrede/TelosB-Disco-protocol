@@ -18,6 +18,7 @@ implementation {
 	uint16_t counter;
 	uint16_t diffCounter;
 	uint16_t ledCounter;
+	uint16_t termCount;
 	
 	message_t packet;
 	message_t pkt;
@@ -52,6 +53,12 @@ implementation {
 			call Control.stop();
 			call Timer1.stop();
 			busy = FALSE;
+		}
+		
+		if(termCount >= 100){
+			call Timer0.stop();
+			call Timer1.stop();
+			printf("--Done--\n");
 		}
 		
 		printfflush();
@@ -105,7 +112,8 @@ implementation {
 
 	event message_t * Receive.receive(message_t * msg, void * payload, uint8_t len) {
 		if(len == sizeof(BlinkToRadioMsg)) {
-			printf("%u\n", diffCounter * TIMER_PERIOD_MILLI);
+			termCount++;
+			printf("%u-%u\n", termCount ,diffCounter * TIMER_PERIOD_MILLI);
 			diffCounter = 0;
 			call Control.stop();
 			printfflush();
