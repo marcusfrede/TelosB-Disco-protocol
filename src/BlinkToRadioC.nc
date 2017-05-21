@@ -16,6 +16,7 @@ module BlinkToRadioC {
 implementation {
 
 	uint16_t counter;
+	uint16_t diffCounter;
 	uint16_t ledCounter;
 	
 	message_t packet;
@@ -36,62 +37,70 @@ implementation {
 	
 
 	event void Boot.booted() {
-	 	initLeds();
+		initLeds();
 		call Timer0.startPeriodic(TIMER_PERIOD_MILLI);
+	}	
+	
+	event void Timer0.fired() {
+		counter++;
+		diffCounter++;
+		if( !busy && ((counter % PRIME1 == 0) || (counter % PRIME2 == 0))) {
+			call Control.start();		
+		}
+		
+		if(((counter % PRIME1 == 1) || (counter % PRIME2 == 1))) {
+			call Control.stop();
+			busy = FALSE;		
+		}
+	}
+	
+	void sendMessage() {
+		BlinkToRadioMsg* btrpkt = (BlinkToRadioMsg* )(call Packet.getPayload(&pkt, sizeof(BlinkToRadioMsg)));
+		btrpkt->nodeid = TOS_NODE_ID;
+	
+		if(call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {				
+			printf("Control.startDone - send is success\n");
+			printfflush();		
+			busy = TRUE;
+		}
 	}
 
 	event void Control.startDone(error_t err) {
-		if(err == SUCCESS) {
+		if(err != SUCCESS) {
+			return;
 		}
-		else {
-			call Timer0.startPeriodic(TIMER_PERIOD_MILLI);
+		
+		if (IDENTIFIER == 1) {
+			sendMessage();
+		} else if(IDENTIFIER == 2) {
+
 		}
 	}
 
 	event void Control.stopDone(error_t err) {
 	}
 
-	event void Timer0.fired() {
-		counter++;
-		if( !busy && counter % COPRIME == 0) {
-			call Control.start();		
-		}
-		if(!busy && counter % COPRIME == 1){
-			BlinkToRadioMsg* btrpkt = (BlinkToRadioMsg* )(call Packet.getPayload(&pkt, sizeof(BlinkToRadioMsg)));
-			if(btrpkt == NULL) {return;}
-			btrpkt->nodeid = TOS_NODE_ID;
-			btrpkt->counter = ++ledCounter;
-	
-			if(call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {
-				busy = TRUE;
-			}
-		}
-		if( !busy && counter % COPRIME == 2) {
-			call Control.stop();
-		}
-	}
-
 	event void AMSend.sendDone(message_t * msg, error_t err) {
 		if(&pkt == msg) {
-			TestSerialMsg* rcm = (TestSerialMsg*) call Packet.getPayload(&packet, sizeof(TestSerialMsg));
-			if (rcm == NULL) {return;}
-			rcm->counter = ledCounter;
 			busy = FALSE;		
-	
-			if(call AMSend.send(AM_BROADCAST_ADDR, &packet, sizeof(TestSerialMsg)) == SUCCESS) {
-				busy = TRUE;
-				printf("Message send from %u\n", IDENTIFIER);
-				printfflush();
-			}
+			printf("Message send from %u\n", IDENTIFIER);
+			printfflush();
+			sendMessage();
 		}
 	}
 
 	event message_t * Receive.receive(message_t * msg, void * payload, uint8_t len) {
 		if(len == sizeof(BlinkToRadioMsg)) {
-			BlinkToRadioMsg * btrpkt = (BlinkToRadioMsg *) payload;
-			printf("Message received from %u\n", counter);
+	//		BlinkToRadioMsg * btrpkt = (BlinkToRadioMsg *) payload;
+			printf("%u\n", diffCounter);
+			diffCounter = 0;
 			printfflush();
-		}
+		} else {
+			printf("Message failed receive\n");
+			printfflush();
+			}
 		return msg;
 	}
+
+
 }
