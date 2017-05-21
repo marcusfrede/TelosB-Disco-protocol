@@ -6,6 +6,7 @@ module BlinkToRadioC {
 	uses interface Boot;
 	uses interface Leds;
 	uses interface Timer<TMilli> as Timer0;
+	uses interface Timer<TMilli> as Timer1;
 	uses interface Packet;
 	uses interface AMPacket;
 	uses interface AMSend;
@@ -14,7 +15,6 @@ module BlinkToRadioC {
 }
 
 implementation {
-
 	uint16_t counter;
 	uint16_t diffCounter;
 	uint16_t ledCounter;
@@ -48,21 +48,31 @@ implementation {
 			call Control.start();		
 		}
 		
-		if(((counter % PRIME1 == 1) || (counter % PRIME2 == 1))) {
+		if (((counter % PRIME1 == 1) || (counter % PRIME2 == 1))) {
 			call Control.stop();
-			busy = FALSE;		
+			call Timer1.stop();
+			busy = FALSE;
 		}
+		
+		printfflush();
 	}
-	
+
 	void sendMessage() {
 		BlinkToRadioMsg* btrpkt = (BlinkToRadioMsg* )(call Packet.getPayload(&pkt, sizeof(BlinkToRadioMsg)));
 		btrpkt->nodeid = TOS_NODE_ID;
 	
 		if(call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {				
-			printf("Control.startDone - send is success\n");
-			printfflush();		
+			printf("sendMessage - send is success\n");	
 			busy = TRUE;
+			//sendMessage();
+			call Timer1.startOneShot(LEADING_EDGE_MILLI);
+		} else {
+			printf("sendMessage - failed\n");
 		}
+	}
+	
+	event void Timer1.fired() {
+		sendMessage();
 	}
 
 	event void Control.startDone(error_t err) {
@@ -70,7 +80,10 @@ implementation {
 			return;
 		}
 		
+		//printf("Control.startDone\n");
+		
 		if (IDENTIFIER == 1) {
+			call Timer1.startOneShot(LEADING_EDGE_MILLI);
 			sendMessage();
 		} else if(IDENTIFIER == 2) {
 
@@ -78,29 +91,28 @@ implementation {
 	}
 
 	event void Control.stopDone(error_t err) {
+		//printf("Control.stopDone\n");
+		if (IDENTIFIER == 1) {
+			printf("------\n");
+		}
 	}
 
 	event void AMSend.sendDone(message_t * msg, error_t err) {
 		if(&pkt == msg) {
-			busy = FALSE;		
-			printf("Message send from %u\n", IDENTIFIER);
-			printfflush();
-			sendMessage();
+			busy = FALSE;
 		}
 	}
 
 	event message_t * Receive.receive(message_t * msg, void * payload, uint8_t len) {
 		if(len == sizeof(BlinkToRadioMsg)) {
-	//		BlinkToRadioMsg * btrpkt = (BlinkToRadioMsg *) payload;
-			printf("%u\n", diffCounter);
+			printf("%u\n", diffCounter * TIMER_PERIOD_MILLI);
 			diffCounter = 0;
+			call Control.stop();
 			printfflush();
 		} else {
 			printf("Message failed receive\n");
 			printfflush();
-			}
+		}
 		return msg;
 	}
-
-
 }

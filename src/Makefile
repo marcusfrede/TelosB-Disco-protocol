@@ -5,9 +5,9 @@ CLEAN_EXTRA = *.class TestSerialMsg.java
 CFLAGS += -I$(TOSDIR)/lib/printf
 
 
-BlinkToRadio.class: $(wildcard *.java) TestSerialMsg.java
+BlinkToRadio.class: $(wildcard *.java)
 	javac -target 1.4 -source 1.4 *.java
 
-TestSerialMsg.java:
-	mig java -target=null $(CFLAGS) -java-classname=TestSerialMsg BlinkToRadio.h TestSerialMsg -o $@
+#TestSerialMsg.java:
+#	mig java -target=null $(CFLAGS) -java-classname=TestSerialMsg BlinkToRadio.h TestSerialMsg -o $@
 include $(MAKERULES)
